@@ -44,7 +44,7 @@ class Anymal(VecTask):
     def __init__(self, cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render):
 
         self.cfg = cfg
-        
+
         # normalization
         self.lin_vel_scale = self.cfg["env"]["learn"]["linearVelocityScale"]
         self.ang_vel_scale = self.cfg["env"]["learn"]["angularVelocityScale"]
@@ -53,11 +53,11 @@ class Anymal(VecTask):
         self.action_scale = self.cfg["env"]["control"]["actionScale"]
 
         # reward scales
-        self.rew_scales = {}
-        self.rew_scales["lin_vel_xy"] = self.cfg["env"]["learn"]["linearVelocityXYRewardScale"]
-        self.rew_scales["ang_vel_z"] = self.cfg["env"]["learn"]["angularVelocityZRewardScale"]
-        self.rew_scales["torque"] = self.cfg["env"]["learn"]["torqueRewardScale"]
-
+        self.rew_scales = {
+            "lin_vel_xy": self.cfg["env"]["learn"]["linearVelocityXYRewardScale"],
+            "ang_vel_z": self.cfg["env"]["learn"]["angularVelocityZRewardScale"],
+            "torque": self.cfg["env"]["learn"]["torqueRewardScale"],
+        }
         # randomization
         self.randomization_params = self.cfg["task"]["randomization_params"]
         self.randomize = self.cfg["task"]["randomize"]
@@ -96,8 +96,8 @@ class Anymal(VecTask):
         self.Kp = self.cfg["env"]["control"]["stiffness"]
         self.Kd = self.cfg["env"]["control"]["damping"]
 
-        for key in self.rew_scales.keys():
-            self.rew_scales[key] *= self.dt
+        for value in self.rew_scales.values():
+            value *= self.dt
 
         if self.viewer != None:
             p = self.cfg["env"]["viewer"]["pos"]
@@ -377,13 +377,15 @@ def compute_anymal_observations(root_states,
 
     commands_scaled = commands*torch.tensor([lin_vel_scale, lin_vel_scale, ang_vel_scale], requires_grad=False, device=commands.device)
 
-    obs = torch.cat((base_lin_vel,
-                     base_ang_vel,
-                     projected_gravity,
-                     commands_scaled,
-                     dof_pos_scaled,
-                     dof_vel*dof_vel_scale,
-                     actions
-                     ), dim=-1)
-
-    return obs
+    return torch.cat(
+        (
+            base_lin_vel,
+            base_ang_vel,
+            projected_gravity,
+            commands_scaled,
+            dof_pos_scaled,
+            dof_vel * dof_vel_scale,
+            actions,
+        ),
+        dim=-1,
+    )

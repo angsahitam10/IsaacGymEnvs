@@ -127,10 +127,10 @@ class Serializable:
         elif path.endswith(".npy"):
             d = np.load(path, allow_pickle=True).item()
         else:
-            assert False, "failed to load {} from {}".format(cls.__name__, path)
-        assert d["__name__"] == cls.__name__, "the file belongs to {}, not {}".format(
-            d["__name__"], cls.__name__
-        )
+            assert False, f"failed to load {cls.__name__} from {path}"
+        assert (
+            d["__name__"] == cls.__name__
+        ), f'the file belongs to {d["__name__"]}, not {cls.__name__}'
         return cls.from_dict(d, *args, **kwargs)
 
     def to_file(self, path: str) -> None:

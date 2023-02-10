@@ -41,16 +41,15 @@ def _indent_xml(elem, level=0):
     i = "\n" + level * "  "
     if len(elem):
         if not elem.text or not elem.text.strip():
-            elem.text = i + "  "
+            elem.text = f"{i}  "
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for elem in elem:
             _indent_xml(elem, level + 1)
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
+    elif level and (not elem.tail or not elem.tail.strip()):
+        elem.tail = i
 
 
 class BallBalance(VecTask):
@@ -179,7 +178,7 @@ class BallBalance(VecTask):
             upper_leg_pos = (upper_leg_from + upper_leg_to) * 0.5
             upper_leg_quat = gymapi.Quat.from_euler_zyx(0, -0.75 * math.pi, angle)
             upper_leg = ET.SubElement(tray, "body")
-            upper_leg.attrib["name"] = "upper_leg" + str(i)
+            upper_leg.attrib["name"] = f"upper_leg{str(i)}"
             upper_leg.attrib["pos"] = "%g %g %g" % (upper_leg_pos.x, upper_leg_pos.y, upper_leg_pos.z)
             upper_leg.attrib["quat"] = "%g %g %g %g" % (upper_leg_quat.w, upper_leg_quat.x, upper_leg_quat.y, upper_leg_quat.z)
             upper_leg_geom = ET.SubElement(upper_leg, "geom")
@@ -187,7 +186,7 @@ class BallBalance(VecTask):
             upper_leg_geom.attrib["size"] = "%g %g" % (leg_radius, 0.5 * leg_length)
             upper_leg_geom.attrib["density"] = "1000"
             upper_leg_joint = ET.SubElement(upper_leg, "joint")
-            upper_leg_joint.attrib["name"] = "upper_leg_joint" + str(i)
+            upper_leg_joint.attrib["name"] = f"upper_leg_joint{str(i)}"
             upper_leg_joint.attrib["type"] = "hinge"
             upper_leg_joint.attrib["pos"] = "%g %g %g" % (0, 0, -0.5 * leg_length)
             upper_leg_joint.attrib["axis"] = "0 1 0"
@@ -197,7 +196,7 @@ class BallBalance(VecTask):
             lower_leg_pos = gymapi.Vec3(-0.5 * leg_length, 0, 0.5 * leg_length)
             lower_leg_quat = gymapi.Quat.from_euler_zyx(0, -0.5 * math.pi, 0)
             lower_leg = ET.SubElement(upper_leg, "body")
-            lower_leg.attrib["name"] = "lower_leg" + str(i)
+            lower_leg.attrib["name"] = f"lower_leg{str(i)}"
             lower_leg.attrib["pos"] = "%g %g %g" % (lower_leg_pos.x, lower_leg_pos.y, lower_leg_pos.z)
             lower_leg.attrib["quat"] = "%g %g %g %g" % (lower_leg_quat.w, lower_leg_quat.x, lower_leg_quat.y, lower_leg_quat.z)
             lower_leg_geom = ET.SubElement(lower_leg, "geom")
@@ -205,7 +204,7 @@ class BallBalance(VecTask):
             lower_leg_geom.attrib["size"] = "%g %g" % (leg_radius, 0.5 * leg_length)
             lower_leg_geom.attrib["density"] = "1000"
             lower_leg_joint = ET.SubElement(lower_leg, "joint")
-            lower_leg_joint.attrib["name"] = "lower_leg_joint" + str(i)
+            lower_leg_joint.attrib["name"] = f"lower_leg_joint{str(i)}"
             lower_leg_joint.attrib["type"] = "hinge"
             lower_leg_joint.attrib["pos"] = "%g %g %g" % (0, 0, -0.5 * leg_length)
             lower_leg_joint.attrib["axis"] = "0 1 0"
@@ -297,8 +296,11 @@ class BallBalance(VecTask):
             dof_props['damping'][free_dofs] = 0
             self.gym.set_actor_dof_properties(env_ptr, bbot_handle, dof_props)
 
-            lower_leg_handles = []
-            lower_leg_handles.append(self.gym.find_actor_rigid_body_handle(env_ptr, bbot_handle, "lower_leg0"))
+            lower_leg_handles = [
+                self.gym.find_actor_rigid_body_handle(
+                    env_ptr, bbot_handle, "lower_leg0"
+                )
+            ]
             lower_leg_handles.append(self.gym.find_actor_rigid_body_handle(env_ptr, bbot_handle, "lower_leg1"))
             lower_leg_handles.append(self.gym.find_actor_rigid_body_handle(env_ptr, bbot_handle, "lower_leg2"))
 
@@ -440,8 +442,11 @@ class BallBalance(VecTask):
             for i in range(self.num_envs):
                 env = self.envs[i]
                 bbot_handle = self.bbot_handles[i]
-                body_handles = []
-                body_handles.append(self.gym.find_actor_rigid_body_handle(env, bbot_handle, "upper_leg0"))
+                body_handles = [
+                    self.gym.find_actor_rigid_body_handle(
+                        env, bbot_handle, "upper_leg0"
+                    )
+                ]
                 body_handles.append(self.gym.find_actor_rigid_body_handle(env, bbot_handle, "upper_leg1"))
                 body_handles.append(self.gym.find_actor_rigid_body_handle(env, bbot_handle, "upper_leg2"))
 

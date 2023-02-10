@@ -67,10 +67,10 @@ class ReplayBuffer():
 
             store_n = min(curr_n, buffer_size - self._head)
             curr_buf[self._head:(self._head + store_n)] = data_dict[key][:store_n]    
-        
+
             remainder = n - store_n
             if (remainder > 0):
-                curr_buf[0:remainder] = data_dict[key][store_n:]  
+                curr_buf[:remainder] = data_dict[key][store_n:]  
 
         self._head = (self._head + n) % buffer_size
         self._total_count += n
@@ -87,10 +87,7 @@ class ReplayBuffer():
         if (total_count < buffer_size):
             rand_idx = rand_idx % self._head
 
-        samples = dict()
-        for k, v in self._data_buf.items():
-            samples[k] = v[rand_idx]
-
+        samples = {k: v[rand_idx] for k, v in self._data_buf.items()}
         self._sample_head += n
         if (self._sample_head >= buffer_size):
             self._reset_sample_idx()
@@ -105,7 +102,7 @@ class ReplayBuffer():
 
     def _init_data_buf(self, data_dict):
         buffer_size = self.get_buffer_size()
-        self._data_buf = dict()
+        self._data_buf = {}
 
         for k, v in data_dict.items():
             v_shape = v.shape[1:]

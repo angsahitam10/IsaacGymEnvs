@@ -32,14 +32,11 @@ class _MyFormatter(logging.Formatter):
         msg = '%(message)s'
 
         if record.levelno == logging.WARNING:
-            fmt = date + ' ' + \
-                colored('WRN', 'red', attrs=[]) + ' ' + msg
-        elif record.levelno == logging.ERROR or \
-                record.levelno == logging.CRITICAL:
-            fmt = date + ' ' + \
-                colored('ERR', 'red', attrs=['underline']) + ' ' + msg
+            fmt = (((f'{date} ' + colored('WRN', 'red', attrs=[])) + ' ') + msg)
+        elif record.levelno in [logging.ERROR, logging.CRITICAL]:
+            fmt = (((f'{date} ' + colored('ERR', 'red', attrs=['underline'])) + ' ') + msg)
         else:
-            fmt = date + ' ' + msg
+            fmt = f'{date} {msg}'
 
         if hasattr(self, '_style'):
             # Python3 compatibility
@@ -105,7 +102,7 @@ def set_file_handler(path=None, prefix='', time_str=''):
     file_handler.setFormatter(_MyFormatter(datefmt='%m%d %H:%M:%S'))
     _logger.addHandler(file_handler)
 
-    _logger.info('Log file set to {}'.format(path))
+    _logger.info(f'Log file set to {path}')
     return path
 
 

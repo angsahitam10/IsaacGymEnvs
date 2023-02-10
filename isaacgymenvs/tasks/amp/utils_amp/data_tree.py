@@ -88,16 +88,12 @@ class data_tree(object):
             if self._is_leaf:
                 verbose_data_dict = []
                 for ii, i_key in enumerate(self._data_dict):
-                    new_key = i_key + ' (picked {} / {})'.format(
-                        str(self._picked[ii]), self._length[ii]
-                    )
+                    new_key = f'{i_key} (picked {str(self._picked[ii])} / {self._length[ii]})'
                     verbose_data_dict.append(new_key)
             else:
                 verbose_data_dict = OrderedDict()
                 for ii, i_key in enumerate(self._data_dict):
-                    new_key = i_key + ' (picked {} / {})'.format(
-                        str(self._picked[ii]), self._children[ii].total_length
-                    )
+                    new_key = f'{i_key} (picked {str(self._picked[ii])} / {self._children[ii].total_length})'
                     verbose_data_dict[new_key] = self._data_dict[i_key]
 
             self._data_dict = verbose_data_dict
@@ -215,8 +211,7 @@ def parse_dataset(env, args):
 
 def save_tsv_files(base_dir, name, data_dict):
     file_name = os.path.join(base_dir, 'experiments', 'mocap_files', name)
-    recorder = open(file_name, "w")
-    for i_data in data_dict:
-        line = '{}\t{}\t{}\t{}\t{}\n'.format(*i_data)
-        recorder.write(line)
-    recorder.close()
+    with open(file_name, "w") as recorder:
+        for i_data in data_dict:
+            line = '{}\t{}\t{}\t{}\t{}\n'.format(*i_data)
+            recorder.write(line)

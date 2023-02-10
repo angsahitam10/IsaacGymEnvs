@@ -77,7 +77,7 @@ class HRLAgent(common_agent.CommonAgent):
 
         rewards = 0.0
         done_count = 0.0
-        for t in range(self._llc_steps):
+        for _ in range(self._llc_steps):
             llc_actions = self._compute_llc_action(obs, actions)
             obs, curr_rewards, curr_dones, infos = self.vec_env.step(llc_actions)
 
@@ -155,5 +155,4 @@ class HRLAgent(common_agent.CommonAgent):
 
     def _extract_llc_obs(self, obs):
         obs_size = obs.shape[-1]
-        llc_obs = obs[..., :obs_size - self._task_size]
-        return llc_obs
+        return obs[..., :obs_size - self._task_size]

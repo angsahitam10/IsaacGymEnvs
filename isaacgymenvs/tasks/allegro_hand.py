@@ -98,7 +98,7 @@ class AllegroHand(VecTask):
         # can be "full_no_vel", "full", "full_state"
         self.obs_type = self.cfg["env"]["observationType"]
 
-        if not (self.obs_type in ["full_no_vel", "full", "full_state"]):
+        if self.obs_type not in ["full_no_vel", "full", "full_state"]:
             raise Exception(
                 "Unknown type of observations!\nobservationType should be one of: [openai, full_no_vel, full, full_state]")
 
@@ -116,10 +116,7 @@ class AllegroHand(VecTask):
         self.fingertip_obs = True
         self.asymmetric_obs = self.cfg["env"]["asymmetric_observations"]
 
-        num_states = 0
-        if self.asymmetric_obs:
-            num_states = 88
-
+        num_states = 88 if self.asymmetric_obs else 0
         self.cfg["env"]["numObservations"] = self.num_obs_dict[self.obs_type]
         self.cfg["env"]["numStates"] = num_states
         self.cfg["env"]["numActions"] = 16

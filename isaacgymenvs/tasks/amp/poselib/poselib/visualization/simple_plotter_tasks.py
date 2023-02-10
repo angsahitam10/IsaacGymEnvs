@@ -84,7 +84,7 @@ class DrawXDLines(BasePlotterTask):
 
     @property
     def name(self):
-        return "{}DLines".format(self.dim)
+        return f"{self.dim}DLines"
 
     def update(self, lines):
         self._lines = np.array(lines)
@@ -164,7 +164,7 @@ class DrawXDDots(BasePlotterTask):
 
     @property
     def name(self):
-        return "{}DDots".format(self.dim)
+        return f"{self.dim}DDots"
 
 
 class DrawXDTrail(DrawXDDots):
@@ -174,7 +174,7 @@ class DrawXDTrail(DrawXDDots):
 
     @property
     def name(self):
-        return "{}DTrail".format(self.dim)
+        return f"{self.dim}DTrail"
 
 
 class Draw2DLines(DrawXDLines):

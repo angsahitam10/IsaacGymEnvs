@@ -80,7 +80,7 @@ class AMPPlayerContinuous(common_player.CommonPlayer):
     def _amp_debug(self, info):
         with torch.no_grad():
             amp_obs = info['amp_obs']
-            amp_obs = amp_obs[0:1]
+            amp_obs = amp_obs[:1]
             disc_pred = self._eval_disc(amp_obs.to(self.device))
             amp_rewards = self._calc_amp_rewards(amp_obs.to(self.device))
             disc_reward = amp_rewards['disc_rewards']
@@ -102,10 +102,7 @@ class AMPPlayerContinuous(common_player.CommonPlayer):
 
     def _calc_amp_rewards(self, amp_obs):
         disc_r = self._calc_disc_rewards(amp_obs)
-        output = {
-            'disc_rewards': disc_r
-        }
-        return output
+        return {'disc_rewards': disc_r}
 
     def _calc_disc_rewards(self, amp_obs):
         with torch.no_grad():

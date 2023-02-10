@@ -158,8 +158,8 @@ def get_flatten_ids(precomputed_state):
         i_length = motion_offsets[i_motion + 1] - motion_offsets[i_motion]
         init_state_id.extend(range(i_length))
         init_motion_id.extend([i_motion] * i_length)
-        if len(global_id) == 0:
-            global_id.extend(range(0, i_length))
+        if not global_id:
+            global_id.extend(range(i_length))
         else:
             global_id.extend(range(global_id[-1] + 1,
                                    global_id[-1] + i_length + 1))
@@ -203,16 +203,13 @@ def get_robot_states_from_torch_tensor(config, ts, global_quats, vels, avels,
 
     # the orientation
     if config['env_orientation_ob']:
-        if relative_rot is not None:
-            obs = np.concatenate([obs, relative_rot], axis=-1)
-        else:
+        if relative_rot is None:
             curr_rot = global_quats[np.arange(num_envs)][:, 0]
             curr_rot = curr_rot.reshape(num_envs, -1, 4)
             relative_rot = quaternion_math.compute_orientation_drift(
                 init_rot, curr_rot
             ).cpu().numpy()
-            obs = np.concatenate([obs, relative_rot], axis=-1)
-
+        obs = np.concatenate([obs, relative_rot], axis=-1)
     if config['env_frame_ob']:
         if type(motion_length) == np.ndarray:
             motion_length = motion_length.astype(np.float)
@@ -223,14 +220,15 @@ def get_robot_states_from_torch_tensor(config, ts, global_quats, vels, avels,
                                          float(motion_length), axis=-1)
         obs = np.concatenate([obs, progress_ob], axis=-1)
 
-    if config['env_motion_ob'] and not config['env_motion_ob_onehot']:
-        motion_id_ob = np.expand_dims(motion_id.astype(np.float) /
-                                      float(num_motion), axis=-1)
+    if config['env_motion_ob']:
+        motion_id_ob = (
+            motion_onehot_matrix[motion_id]
+            if config['env_motion_ob_onehot']
+            else np.expand_dims(
+                motion_id.astype(np.float) / float(num_motion), axis=-1
+            )
+        )
         obs = np.concatenate([obs, motion_id_ob], axis=-1)
-    elif config['env_motion_ob'] and config['env_motion_ob_onehot']:
-        motion_id_ob = motion_onehot_matrix[motion_id]
-        obs = np.concatenate([obs, motion_id_ob], axis=-1)
-
     return obs, info
 
 
@@ -238,5 +236,4 @@ def get_xyzoffset(start_ts, end_ts, root_yaw_inv):
     xyoffset = (end_ts - start_ts)[:, [0], :].reshape(1, -1, 1, 3)
     ryinv = root_yaw_inv.reshape(1, -1, 1, 4)
 
-    calibrated_xyz_offset = quaternion_math.quat_apply(ryinv, xyoffset)[0, :, 0, :]
-    return calibrated_xyz_offset
+    return quaternion_math.quat_apply(ryinv, xyoffset)[0, :, 0, :]

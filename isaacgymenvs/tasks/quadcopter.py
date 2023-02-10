@@ -163,7 +163,7 @@ class Quadcopter(VecTask):
             rotor_quat = gymapi.Quat()
 
             rotor_arm = ET.SubElement(chassis, "body")
-            rotor_arm.attrib["name"] = "rotor_arm" + str(i)
+            rotor_arm.attrib["name"] = f"rotor_arm{str(i)}"
             rotor_arm.attrib["pos"] = "%g %g %g" % (rotor_arm_pos.x, rotor_arm_pos.y, rotor_arm_pos.z)
             rotor_arm.attrib["quat"] = "%g %g %g %g" % (rotor_arm_quat.w, rotor_arm_quat.x, rotor_arm_quat.y, rotor_arm_quat.z)
             rotor_arm_geom = ET.SubElement(rotor_arm, "geom")
@@ -172,7 +172,7 @@ class Quadcopter(VecTask):
             rotor_arm_geom.attrib["density"] = "200"
 
             pitch_joint = ET.SubElement(rotor_arm, "joint")
-            pitch_joint.attrib["name"] = "rotor_pitch" + str(i)
+            pitch_joint.attrib["name"] = f"rotor_pitch{str(i)}"
             pitch_joint.attrib["type"] = "hinge"
             pitch_joint.attrib["pos"] = "%g %g %g" % (0, 0, 0)
             pitch_joint.attrib["axis"] = "0 1 0"
@@ -180,7 +180,7 @@ class Quadcopter(VecTask):
             pitch_joint.attrib["range"] = "-30 30"
 
             rotor = ET.SubElement(rotor_arm, "body")
-            rotor.attrib["name"] = "rotor" + str(i)
+            rotor.attrib["name"] = f"rotor{str(i)}"
             rotor.attrib["pos"] = "%g %g %g" % (rotor_pos.x, rotor_pos.y, rotor_pos.z)
             rotor.attrib["quat"] = "%g %g %g %g" % (rotor_quat.w, rotor_quat.x, rotor_quat.y, rotor_quat.z)
             rotor_geom = ET.SubElement(rotor, "geom")
@@ -191,7 +191,7 @@ class Quadcopter(VecTask):
             rotor_geom.attrib["density"] = "1000"
 
             roll_joint = ET.SubElement(rotor, "joint")
-            roll_joint.attrib["name"] = "rotor_roll" + str(i)
+            roll_joint.attrib["name"] = f"rotor_roll{str(i)}"
             roll_joint.attrib["type"] = "hinge"
             roll_joint.attrib["pos"] = "%g %g %g" % (0, 0, 0)
             roll_joint.attrib["axis"] = "1 0 0"

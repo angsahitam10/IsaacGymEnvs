@@ -188,7 +188,7 @@ class HumanoidAMPBase(VecTask):
 
         actuator_props = self.gym.get_asset_actuator_properties(humanoid_asset)
         motor_efforts = [prop.motor_effort for prop in actuator_props]
-        
+
         # create force sensors at the feet
         right_foot_idx = self.gym.find_asset_rigid_body_index(humanoid_asset, "right_foot")
         left_foot_idx = self.gym.find_asset_rigid_body_index(humanoid_asset, "left_foot")
@@ -215,14 +215,14 @@ class HumanoidAMPBase(VecTask):
         self.envs = []
         self.dof_limits_lower = []
         self.dof_limits_upper = []
-        
+
+        contact_filter = 0
+
         for i in range(self.num_envs):
             # create env instance
             env_ptr = self.gym.create_env(
                 self.sim, lower, upper, num_per_row
             )
-            contact_filter = 0
-            
             handle = self.gym.create_actor(env_ptr, humanoid_asset, start_pose, "humanoid", i, contact_filter, 0)
 
             self.gym.enable_actor_dof_force_sensors(env_ptr, handle)
@@ -253,7 +253,7 @@ class HumanoidAMPBase(VecTask):
 
         self._key_body_ids = self._build_key_body_ids_tensor(env_ptr, handle)
         self._contact_body_ids = self._build_contact_body_ids_tensor(env_ptr, handle)
-        
+
         if (self._pd_control):
             self._build_pd_action_offset_scale()
 
@@ -336,10 +336,10 @@ class HumanoidAMPBase(VecTask):
             dof_pos = self._dof_pos[env_ids]
             dof_vel = self._dof_vel[env_ids]
             key_body_pos = self._rigid_body_pos[env_ids][:, self._key_body_ids, :]
-        
-        obs = compute_humanoid_observations(root_states, dof_pos, dof_vel,
-                                            key_body_pos, self._local_root_obs)
-        return obs
+
+        return compute_humanoid_observations(
+            root_states, dof_pos, dof_vel, key_body_pos, self._local_root_obs
+        )
 
     def _reset_actors(self, env_ids):
         self._dof_pos[env_ids] = self._initial_dof_pos[env_ids]
@@ -403,8 +403,7 @@ class HumanoidAMPBase(VecTask):
             assert(body_id != -1)
             body_ids.append(body_id)
 
-        body_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
-        return body_ids
+        return to_torch(body_ids, device=self.device, dtype=torch.long)
 
     def _build_contact_body_ids_tensor(self, env_ptr, actor_handle):
         body_ids = []
@@ -413,12 +412,10 @@ class HumanoidAMPBase(VecTask):
             assert(body_id != -1)
             body_ids.append(body_id)
 
-        body_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
-        return body_ids
+        return to_torch(body_ids, device=self.device, dtype=torch.long)
 
     def _action_to_pd_targets(self, action):
-        pd_tar = self._pd_action_offset + self._pd_action_scale * action
-        return pd_tar
+        return self._pd_action_offset + self._pd_action_scale * action
 
     def _init_camera(self):
         self.gym.refresh_actor_root_state_tensor(self.sim)
@@ -502,10 +499,7 @@ def compute_humanoid_observations(root_states, dof_pos, dof_vel, key_body_pos, l
     root_h = root_pos[:, 2:3]
     heading_rot = calc_heading_quat_inv(root_rot)
 
-    if (local_root_obs):
-        root_rot_obs = quat_mul(heading_rot, root_rot)
-    else:
-        root_rot_obs = root_rot
+    root_rot_obs = quat_mul(heading_rot, root_rot) if local_root_obs else root_rot
     root_rot_obs = quat_to_tan_norm(root_rot_obs)
 
     local_root_vel = my_quat_rotate(heading_rot, root_vel)
@@ -513,7 +507,7 @@ def compute_humanoid_observations(root_states, dof_pos, dof_vel, key_body_pos, l
 
     root_pos_expand = root_pos.unsqueeze(-2)
     local_key_body_pos = key_body_pos - root_pos_expand
-    
+
     heading_rot_expand = heading_rot.unsqueeze(-2)
     heading_rot_expand = heading_rot_expand.repeat((1, local_key_body_pos.shape[1], 1))
     flat_end_pos = local_key_body_pos.view(local_key_body_pos.shape[0] * local_key_body_pos.shape[1], local_key_body_pos.shape[2])
@@ -524,14 +518,22 @@ def compute_humanoid_observations(root_states, dof_pos, dof_vel, key_body_pos, l
 
     dof_obs = dof_to_obs(dof_pos)
 
-    obs = torch.cat((root_h, root_rot_obs, local_root_vel, local_root_ang_vel, dof_obs, dof_vel, flat_local_key_pos), dim=-1)
-    return obs
+    return torch.cat(
+        (
+            root_h,
+            root_rot_obs,
+            local_root_vel,
+            local_root_ang_vel,
+            dof_obs,
+            dof_vel,
+            flat_local_key_pos,
+        ),
+        dim=-1,
+    )
 
 @torch.jit.script
 def compute_humanoid_reward(obs_buf):
-    # type: (Tensor) -> Tensor
-    reward = torch.ones_like(obs_buf[:, 0])
-    return reward
+    return torch.ones_like(obs_buf[:, 0])
 
 @torch.jit.script
 def compute_humanoid_reset(reset_buf, progress_buf, contact_buf, contact_body_ids, rigid_body_pos,

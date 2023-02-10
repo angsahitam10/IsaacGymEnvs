@@ -33,6 +33,7 @@ This script reads an fbx file and returns the joint names, parents, and transfor
 NOTE: It requires the Python FBX package to be installed.
 """
 
+
 import sys
 
 import numpy as np
@@ -41,7 +42,9 @@ try:
     import fbx
     import FbxCommon
 except ImportError as e:
-    print("Error: FBX library failed to load - importing FBX data will not succeed. Message: {}".format(e))
+    print(
+        f"Error: FBX library failed to load - importing FBX data will not succeed. Message: {e}"
+    )
     print("FBX tools must be installed from https://help.autodesk.com/view/FBX/2020/ENU/?guid=FBX_Developer_Help_scripting_with_python_fbx_installing_python_fbx_html")
 
 
@@ -80,11 +83,10 @@ def fbx_to_npy(file_name_in, root_joint_name, fps):
     found_root_node = False
     max_key_count = 0
     root_joint = None
-    while len(possible_root_nodes) > 0:
+    while possible_root_nodes:
         joint = possible_root_nodes.pop(0)
-        if not search_root:
-            if joint.GetName() == root_joint_name:
-                root_joint = joint
+        if not search_root and joint.GetName() == root_joint_name:
+            root_joint = joint
         try:
             curve = _get_animation_curve(joint, fbx_scene)
         except RuntimeError:
@@ -97,8 +99,10 @@ def fbx_to_npy(file_name_in, root_joint_name, fps):
                 root_curve = curve
             if search_root and not root_joint:
                 root_joint = joint
-        for child_index in range(joint.GetChildCount()):
-            possible_root_nodes.append(joint.GetChild(child_index))
+        possible_root_nodes.extend(
+            joint.GetChild(child_index)
+            for child_index in range(joint.GetChildCount())
+        )
     if not found_root_node:
         raise RuntimeError("No root joint found!! Exiting")
 
@@ -129,7 +133,7 @@ def fbx_to_npy(file_name_in, root_joint_name, fps):
         for joint in joint_list:
             arr = np.array(_recursive_to_list(joint.EvaluateLocalTransform(fbx_time)))
             scales = np.array(_recursive_to_list(joint.EvaluateLocalScaling(fbx_time)))
-            if not np.allclose(scales[0:3], scales[0]):
+            if not np.allclose(scales[:3], scales[0]):
                 raise ValueError(
                     "Different X, Y and Z scaling. Unsure how this should be handled. "
                     "To solve this, look at this link and try to upgrade the script "
@@ -159,10 +163,7 @@ def _get_frame_count(fbx_scene):
     #         "More than one animation stack was found. "
     #         "This script must be modified to handle this case. Exiting"
     #     )
-    if num_anim_stacks > 1:
-        index = 1
-    else:
-        index = 0
+    index = 1 if num_anim_stacks > 1 else 0
     anim_stack = fbx_scene.GetSrcObject(
         FbxCommon.FbxCriteria.ObjectType(FbxCommon.FbxAnimStack.ClassId), index
     )
@@ -184,10 +185,7 @@ def _get_animation_curve(joint, fbx_scene):
     #         "More than one animation stack was found. "
     #         "This script must be modified to handle this case. Exiting"
     #     )
-    if num_anim_stacks > 1:
-        index = 1
-    else:
-        index = 0
+    index = 1 if num_anim_stacks > 1 else 0
     anim_stack = fbx_scene.GetSrcObject(
         FbxCommon.FbxCriteria.ObjectType(FbxCommon.FbxAnimStack.ClassId), index
     )

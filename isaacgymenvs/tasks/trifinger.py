@@ -121,10 +121,7 @@ class CuboidalObject:
                   object is a cube.
         """
         # decide the size depedning on input type
-        if isinstance(size, float):
-            self._size = (size, size, size)
-        else:
-            self._size = size
+        self._size = (size, size, size) if isinstance(size, float) else size
         # compute remaining attributes
         self.__compute()
 
@@ -152,10 +149,7 @@ class CuboidalObject:
                   that object is a cube.
         """
         # decide the size depedning on input type
-        if isinstance(size, float):
-            self._size = (size, size, size)
-        else:
-            self._size = size
+        self._size = (size, size, size) if isinstance(size, float) else size
         # compute attributes
         self.__compute()
 
@@ -367,7 +361,7 @@ class Trifinger(VecTask):
         fingertips_frames = ["finger_tip_link_0", "finger_tip_link_120", "finger_tip_link_240"]
         self._fingertips_handles = OrderedDict.fromkeys(fingertips_frames, None)
         # mapping from name to gym dof index
-        robot_dof_names = list()
+        robot_dof_names = []
         for finger_pos in ['0', '120', '240']:
             robot_dof_names += [f'finger_base_to_upper_joint_{finger_pos}',
                                 f'finger_upper_to_middle_joint_{finger_pos}',
@@ -533,7 +527,7 @@ class Trifinger(VecTask):
         # initialize gym indices buffer as a list
         # note: later the list is converted to torch tensor for ease in interfacing with IsaacGym.
         for asset_name in self.gym_indices.keys():
-            self.gym_indices[asset_name] = list()
+            self.gym_indices[asset_name] = []
         # count number of shapes and bodies
         max_agg_bodies = 0
         max_agg_shapes = 0
@@ -734,7 +728,7 @@ class Trifinger(VecTask):
             self.cfg["env"]["reward_terms"]["keypoints_dist"]["activate"]
         )
 
-        self.extras.update({"env/rewards/"+k: v.mean() for k, v in log_dict.items()})
+        self.extras.update({f"env/rewards/{k}": v.mean() for k, v in log_dict.items()})
 
     def compute_observations(self):
         # refresh memory buffers
@@ -1243,11 +1237,12 @@ class Trifinger(VecTask):
         object_asset_options.fix_base_link = True
         object_asset_options.thickness = 0.001
         object_asset_options.flip_visual_attachments = True
-        # load object asset
-        goal_object_asset = self.gym.load_asset(self.sim, self._trifinger_assets_dir,
-                                                 self._object_urdf_file, object_asset_options)
-        # return the asset
-        return goal_object_asset
+        return self.gym.load_asset(
+            self.sim,
+            self._trifinger_assets_dir,
+            self._object_urdf_file,
+            object_asset_options,
+        )
 
     @property
     def env_steps_count(self) -> int:

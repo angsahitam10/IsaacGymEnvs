@@ -61,16 +61,13 @@ class CommonPlayer(players.PpoPlayerContinuous):
         sum_game_res = 0
         n_games = n_games * n_game_life
         games_played = 0
-        has_masks = False
         has_masks_func = getattr(self.env, "has_action_mask", None) is not None
 
         op_agent = getattr(self.env, "create_agent", None)
         if op_agent:
             agent_inited = True
 
-        if has_masks_func:
-            has_masks = self.env.has_action_mask()
-
+        has_masks = self.env.has_action_mask() if has_masks_func else False
         need_init_rnn = self.is_rnn
         for _ in range(n_games):
             if games_played >= n_games:
@@ -89,7 +86,7 @@ class CommonPlayer(players.PpoPlayerContinuous):
 
             print_game_res = False
 
-            for n in range(self.max_steps):
+            for _ in range(self.max_steps):
                 obs_dict, done_env_ids = self._env_reset_done()
 
                 if has_masks:
@@ -100,7 +97,7 @@ class CommonPlayer(players.PpoPlayerContinuous):
                 obs_dict, r, done, info =  self.env_step(self.env, action)
                 cr += r
                 steps += 1
-  
+
                 self._post_step(info)
 
                 if render:
@@ -121,7 +118,7 @@ class CommonPlayer(players.PpoPlayerContinuous):
                     cur_steps = steps[done_indices].sum().item()
 
                     cr = cr * (1.0 - done.float())
-                    steps = steps * (1.0 - done.float())
+                    steps *= 1.0 - done.float()
                     sum_rewards += cur_rewards
                     sum_steps += cur_steps
 
@@ -153,14 +150,10 @@ class CommonPlayer(players.PpoPlayerContinuous):
 
     def obs_to_torch(self, obs):
         obs = super().obs_to_torch(obs)
-        obs_dict = {
-            'obs': obs
-        }
-        return obs_dict
+        return {'obs': obs}
 
     def get_action(self, obs_dict, is_determenistic = False):
-        output = super().get_action(obs_dict['obs'], is_determenistic)
-        return output
+        return super().get_action(obs_dict['obs'], is_determenistic)
 
     def _build_net(self, config):
         self.model = self.network.build(config)
@@ -179,15 +172,14 @@ class CommonPlayer(players.PpoPlayerContinuous):
 
     def _build_net_config(self):
         obs_shape = torch_ext.shape_whc_to_cwh(self.obs_shape)
-        config = {
-            'actions_num' : self.actions_num,
-            'input_shape' : obs_shape,
-            'num_seqs' : self.num_agents,
+        return {
+            'actions_num': self.actions_num,
+            'input_shape': obs_shape,
+            'num_seqs': self.num_agents,
             'value_size': self.env_info.get('value_size', 1),
             'normalize_value': self.normalize_value,
             'normalize_input': self.normalize_input,
-        } 
-        return config
+        }
 
     def _setup_action_space(self):
         self.actions_num = self.action_space.shape[0] 

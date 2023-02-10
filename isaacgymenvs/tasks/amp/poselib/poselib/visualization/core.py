@@ -50,7 +50,7 @@ class BasePlotterTask(object):
         return self._task_type
 
     def get_scoped_name(self, name):
-        return self._task_name + "/" + name
+        return f"{self._task_name}/{name}"
 
     def __iter__(self):
         """Should override this function to return a list of task primitives

@@ -50,11 +50,9 @@ SCREEN_CAPTURE_RESOLUTION = (1027, 768)
 
 def _create_sim_once(gym, *args, **kwargs):
     global EXISTING_SIM
-    if EXISTING_SIM is not None:
-        return EXISTING_SIM
-    else:
+    if EXISTING_SIM is None:
         EXISTING_SIM = gym.create_sim(*args, **kwargs)
-        return EXISTING_SIM
+    return EXISTING_SIM
 
 
 class Env(ABC):
@@ -74,7 +72,7 @@ class Env(ABC):
 
         self.device = "cpu"
         if config["sim"]["use_gpu_pipeline"]:
-            if self.device_type.lower() == "cuda" or self.device_type.lower() == "gpu":
+            if self.device_type.lower() in ["cuda", "gpu"]:
                 self.device = "cuda" + ":" + str(self.device_id)
             else:
                 print("GPU Pipeline can only be used with GPU simulation. Forcing CPU Pipeline.")
@@ -88,7 +86,7 @@ class Env(ABC):
 
         enable_camera_sensors = config.get("enableCameraSensors", False)
         self.graphics_device_id = graphics_device_id
-        if enable_camera_sensors == False and self.headless == True:
+        if enable_camera_sensors == False and self.headless:
             self.graphics_device_id = -1
 
         self.num_environments = config["env"]["numEnvs"]
@@ -205,12 +203,9 @@ class VecTask(Env):
         self.original_props = {}
         self.dr_randomizations = {}
         self.actor_params_generator = None
-        self.extern_actor_params = {}
         self.last_step = -1
         self.last_rand_step = -1
-        for env_id in range(self.num_envs):
-            self.extern_actor_params[env_id] = None
-
+        self.extern_actor_params = {env_id: None for env_id in range(self.num_envs)}
         # create envs, sim and viewer
         self.sim_initialized = False
         self.create_sim()
@@ -329,7 +324,7 @@ class VecTask(Env):
         self.pre_physics_step(action_tensor)
 
         # step physics and render each frame
-        for i in range(self.control_freq_inv):
+        for _ in range(self.control_freq_inv):
             if self.force_render:
                 self.render()
             self.gym.simulate(self.sim)
@@ -364,9 +359,11 @@ class VecTask(Env):
         Returns:
             A buffer of zero torch actions
         """
-        actions = torch.zeros([self.num_envs, self.num_actions], dtype=torch.float32, device=self.rl_device)
-
-        return actions
+        return torch.zeros(
+            [self.num_envs, self.num_actions],
+            dtype=torch.float32,
+            device=self.rl_device,
+        )
 
     def reset_idx(self, env_idx):
         """Reset environment with indces in env_idx. 
@@ -407,37 +404,38 @@ class VecTask(Env):
 
     def render(self, mode="rgb_array"):
         """Draw the frame to the viewer, and check for keyboard events."""
-        if self.viewer:
-            # check for window closed
-            if self.gym.query_viewer_has_closed(self.viewer):
+        if not self.viewer:
+            return
+        # check for window closed
+        if self.gym.query_viewer_has_closed(self.viewer):
+            sys.exit()
+
+        # check for keyboard events
+        for evt in self.gym.query_viewer_action_events(self.viewer):
+            if evt.action == "QUIT" and evt.value > 0:
                 sys.exit()
+            elif evt.action == "toggle_viewer_sync" and evt.value > 0:
+                self.enable_viewer_sync = not self.enable_viewer_sync
 
-            # check for keyboard events
-            for evt in self.gym.query_viewer_action_events(self.viewer):
-                if evt.action == "QUIT" and evt.value > 0:
-                    sys.exit()
-                elif evt.action == "toggle_viewer_sync" and evt.value > 0:
-                    self.enable_viewer_sync = not self.enable_viewer_sync
+        # fetch results
+        if self.device != 'cpu':
+            self.gym.fetch_results(self.sim, True)
 
-            # fetch results
-            if self.device != 'cpu':
-                self.gym.fetch_results(self.sim, True)
+        # step graphics
+        if self.enable_viewer_sync:
+            self.gym.step_graphics(self.sim)
+            self.gym.draw_viewer(self.viewer, self.sim, True)
 
-            # step graphics
-            if self.enable_viewer_sync:
-                self.gym.step_graphics(self.sim)
-                self.gym.draw_viewer(self.viewer, self.sim, True)
+            # Wait for dt to elapse in real time.
+            # This synchronizes the physics simulation with the rendering rate.
+            self.gym.sync_frame_time(self.sim)
 
-                # Wait for dt to elapse in real time.
-                # This synchronizes the physics simulation with the rendering rate.
-                self.gym.sync_frame_time(self.sim)
+        else:
+            self.gym.poll_viewer_events(self.viewer)
 
-            else:
-                self.gym.poll_viewer_events(self.viewer)
-
-            if self.virtual_display and mode == "rgb_array":
-                img = self.virtual_display.grab()
-                return np.array(img)
+        if self.virtual_display and mode == "rgb_array":
+            img = self.virtual_display.grab()
+            return np.array(img)
 
     def __parse_sim_params(self, physics_engine: str, config_sim: Dict[str, Any]) -> gymapi.SimParams:
         """Parse the config dictionary for physics stepping settings.
@@ -480,11 +478,9 @@ class VecTask(Env):
                         setattr(sim_params.physx, opt, gymapi.ContactCollection(config_sim["physx"][opt]))
                     else:
                         setattr(sim_params.physx, opt, config_sim["physx"][opt])
-        else:
-            # set the parameters
-            if "flex" in config_sim:
-                for opt in config_sim["flex"].keys():
-                    setattr(sim_params.flex, opt, config_sim["flex"][opt])
+        elif "flex" in config_sim:
+            for opt in config_sim["flex"].keys():
+                setattr(sim_params.flex, opt, config_sim["flex"][opt])
 
         # return the configured params
         return sim_params
@@ -517,7 +513,7 @@ class VecTask(Env):
                     props = [props]
                 for prop_idx, prop in enumerate(props):
                     for attr, attr_randomization_params in prop_attrs.items():
-                        name = prop_name+'_' + str(prop_idx) + '_'+attr
+                        name = f'{prop_name}_{str(prop_idx)}_{attr}'
                         lo_hi = attr_randomization_params['range']
                         distr = attr_randomization_params['distribution']
                         if 'uniform' not in distr:
@@ -525,7 +521,7 @@ class VecTask(Env):
                         if isinstance(prop, np.ndarray):
                             for attr_idx in range(prop[attr].shape[0]):
                                 params.append(prop[attr][attr_idx])
-                                names.append(name+'_'+str(attr_idx))
+                                names.append(f'{name}_{str(attr_idx)}')
                                 lows.append(lo_hi[0])
                                 highs.append(lo_hi[1])
                         else:

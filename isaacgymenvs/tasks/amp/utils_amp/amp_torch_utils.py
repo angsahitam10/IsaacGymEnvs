@@ -72,8 +72,7 @@ def angle_axis_to_exp_map(angle, axis):
     # type: (Tensor, Tensor) -> Tensor
     # compute exponential map from axis-angle
     angle_expand = angle.unsqueeze(-1)
-    exp_map = angle_expand * axis
-    return exp_map
+    return angle_expand * axis
 
 @torch.jit.script
 def quat_to_exp_map(q):
@@ -81,8 +80,7 @@ def quat_to_exp_map(q):
     # compute exponential map from quaternion
     # q must be normalized
     angle, axis = quat_to_angle_axis(q)
-    exp_map = angle_axis_to_exp_map(angle, axis)
-    return exp_map
+    return angle_axis_to_exp_map(angle, axis)
 
 @torch.jit.script
 def quat_to_tan_norm(q):
@@ -91,20 +89,18 @@ def quat_to_tan_norm(q):
     ref_tan = torch.zeros_like(q[..., 0:3])
     ref_tan[..., 0] = 1
     tan = my_quat_rotate(q, ref_tan)
-    
+
     ref_norm = torch.zeros_like(q[..., 0:3])
     ref_norm[..., -1] = 1
     norm = my_quat_rotate(q, ref_norm)
-    
-    norm_tan = torch.cat([tan, norm], dim=len(tan.shape) - 1)
-    return norm_tan
+
+    return torch.cat([tan, norm], dim=len(tan.shape) - 1)
 
 @torch.jit.script
 def euler_xyz_to_exp_map(roll, pitch, yaw):
     # type: (Tensor, Tensor, Tensor) -> Tensor
     q = quat_from_euler_xyz(roll, pitch, yaw)
-    exp_map = quat_to_exp_map(q)
-    return exp_map
+    return quat_to_exp_map(q)
 
 @torch.jit.script
 def exp_map_to_angle_axis(exp_map):
@@ -128,8 +124,7 @@ def exp_map_to_angle_axis(exp_map):
 @torch.jit.script
 def exp_map_to_quat(exp_map):
     angle, axis = exp_map_to_angle_axis(exp_map)
-    q = quat_from_angle_axis(angle, axis)
-    return q
+    return quat_from_angle_axis(angle, axis)
 
 @torch.jit.script
 def slerp(q0, q1, t):
@@ -176,8 +171,7 @@ def calc_heading(q):
     ref_dir[..., 0] = 1
     rot_dir = my_quat_rotate(q, ref_dir)
 
-    heading = torch.atan2(rot_dir[..., 1], rot_dir[..., 0])
-    return heading
+    return torch.atan2(rot_dir[..., 1], rot_dir[..., 0])
 
 @torch.jit.script
 def calc_heading_quat(q):
@@ -189,8 +183,7 @@ def calc_heading_quat(q):
     axis = torch.zeros_like(q[..., 0:3])
     axis[..., 2] = 1
 
-    heading_q = quat_from_angle_axis(heading, axis)
-    return heading_q
+    return quat_from_angle_axis(heading, axis)
 
 @torch.jit.script
 def calc_heading_quat_inv(q):
@@ -202,5 +195,4 @@ def calc_heading_quat_inv(q):
     axis = torch.zeros_like(q[..., 0:3])
     axis[..., 2] = 1
 
-    heading_q = quat_from_angle_axis(-heading, axis)
-    return heading_q
+    return quat_from_angle_axis(-heading, axis)

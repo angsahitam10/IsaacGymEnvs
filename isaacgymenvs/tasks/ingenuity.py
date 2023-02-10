@@ -141,15 +141,15 @@ class Ingenuity(VecTask):
 
         model_path = "../assets/glb/ingenuity/"
         mesh = ET.SubElement(mesh_asset, "mesh")
-        mesh.attrib["file"] = model_path + "chassis.glb"
+        mesh.attrib["file"] = f"{model_path}chassis.glb"
         mesh.attrib["name"] = "ingenuity_mesh"
 
         lower_prop_mesh = ET.SubElement(mesh_asset, "mesh")
-        lower_prop_mesh.attrib["file"] = model_path + "lower_prop.glb"
+        lower_prop_mesh.attrib["file"] = f"{model_path}lower_prop.glb"
         lower_prop_mesh.attrib["name"] = "lower_prop_mesh"
 
         upper_prop_mesh = ET.SubElement(mesh_asset, "mesh")
-        upper_prop_mesh.attrib["file"] = model_path + "upper_prop.glb"
+        upper_prop_mesh.attrib["file"] = f"{model_path}upper_prop.glb"
         upper_prop_mesh.attrib["name"] = "upper_prop_mesh"
 
         worldbody = ET.SubElement(root, "worldbody")
@@ -185,14 +185,14 @@ class Ingenuity(VecTask):
         low_rotor_pos = gymapi.Vec3(0, 0, 0)
         rotor_separation = gymapi.Vec3(0, 0, 0.025)
 
-        for i, mesh_name in enumerate(["lower_prop_mesh", "upper_prop_mesh"]):
-            angle = 0
+        angle = 0
 
+        for i, mesh_name in enumerate(["lower_prop_mesh", "upper_prop_mesh"]):
             rotor_quat = gymapi.Quat.from_axis_angle(zaxis, angle)
             rotor_pos = low_rotor_pos + (rotor_separation * i)
 
             rotor = ET.SubElement(chassis, "body")
-            rotor.attrib["name"] = "rotor_physics_" + str(i)
+            rotor.attrib["name"] = f"rotor_physics_{str(i)}"
             rotor.attrib["pos"] = "%g %g %g" % (rotor_pos.x, rotor_pos.y, rotor_pos.z)
             rotor.attrib["quat"] = "%g %g %g %g" % (rotor_quat.w, rotor_quat.x, rotor_quat.y, rotor_quat.z)
 
@@ -202,14 +202,14 @@ class Ingenuity(VecTask):
             rotor_geom.attrib["density"] = "1000"
 
             roll_joint = ET.SubElement(rotor, "joint")
-            roll_joint.attrib["name"] = "rotor_roll" + str(i)
+            roll_joint.attrib["name"] = f"rotor_roll{str(i)}"
             roll_joint.attrib["type"] = "hinge"
             roll_joint.attrib["limited"] = "true"
             roll_joint.attrib["range"] = "0 0"
             roll_joint.attrib["pos"] = "%g %g %g" % (0, 0, 0)
 
             rotor_dummy = ET.SubElement(chassis, "body")
-            rotor_dummy.attrib["name"] = "rotor_visual_" + str(i)
+            rotor_dummy.attrib["name"] = f"rotor_visual_{str(i)}"
             rotor_dummy.attrib["pos"] = "%g %g %g" % (rotor_pos.x, rotor_pos.y, rotor_pos.z)
             rotor_dummy.attrib["quat"] = "%g %g %g %g" % (rotor_quat.w, rotor_quat.x, rotor_quat.y, rotor_quat.z)
 
@@ -222,7 +222,7 @@ class Ingenuity(VecTask):
             rotor_mesh_geom.attrib["conaffinity"] = "0"
 
             dummy_roll_joint = ET.SubElement(rotor_dummy, "joint")
-            dummy_roll_joint.attrib["name"] = "rotor_roll" + str(i)
+            dummy_roll_joint.attrib["name"] = f"rotor_roll{str(i)}"
             dummy_roll_joint.attrib["type"] = "hinge"
             dummy_roll_joint.attrib["axis"] = "0 0 1"
             dummy_roll_joint.attrib["pos"] = "%g %g %g" % (0, 0, 0)
@@ -290,9 +290,7 @@ class Ingenuity(VecTask):
         self.marker_positions[env_ids] = self.target_root_positions[env_ids]
         # copter "position" is at the bottom of the legs, so shift the target up so it visually aligns better
         self.marker_positions[env_ids, 2] += 0.4
-        actor_indices = self.all_actor_indices[env_ids, 1].flatten()
-
-        return actor_indices
+        return self.all_actor_indices[env_ids, 1].flatten()
 
     def reset_idx(self, env_ids):
 

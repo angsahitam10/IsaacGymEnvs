@@ -38,18 +38,17 @@ class AMPDataset(datasets.PPODataset):
     
     def update_mu_sigma(self, mu, sigma):	  
         raise NotImplementedError()
-        return
 
     def _get_item(self, idx):
         start = idx * self.minibatch_size
         end = (idx + 1) * self.minibatch_size
         sample_idx = self._idx_buf[start:end]
 
-        input_dict = {}
-        for k,v in self.values_dict.items():
-            if k not in self.special_names and v is not None:
-                input_dict[k] = v[sample_idx]
-                
+        input_dict = {
+            k: v[sample_idx]
+            for k, v in self.values_dict.items()
+            if k not in self.special_names and v is not None
+        }
         if (end >= self.batch_size):
             self._shuffle_idx_buf()
 

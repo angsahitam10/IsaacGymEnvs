@@ -88,11 +88,7 @@ class FactoryBase(VecTask, FactoryABCBase):
         self.sim_params.gravity.x = 0
         self.sim_params.gravity.y = 0
         self.sim_params.gravity.z = -self.cfg_base.sim.gravity_mag
-        if self.cfg_base.mode.export_scene:
-            self.sim_params.use_gpu_pipeline = False
-        else:
-            self.sim_params.use_gpu_pipeline = True
-
+        self.sim_params.use_gpu_pipeline = not self.cfg_base.mode.export_scene
         self.sim_params.physx.use_gpu = True
         self.sim_params.physx.solver_type = 1  # default = 1 (Temporal Gauss-Seidel)
         self.sim_params.physx.num_position_iterations = self.cfg_base.sim.num_pos_iters

@@ -322,9 +322,7 @@ def get_analytic_jacobian(fingertip_quat, fingertip_jacobian, num_envs, device):
 
     E_inv = torch.cat((E_inv_top.reshape((batch, 3 * 6)), E_inv_bottom.reshape((batch, 3 * 6))), dim=1).reshape((batch, 6, 6))
 
-    J_a = E_inv @ fingertip_jacobian
-
-    return J_a
+    return E_inv @ fingertip_jacobian
 
 
 def get_skew_symm_matrix(vec, device):
@@ -333,13 +331,13 @@ def get_skew_symm_matrix(vec, device):
 
     batch = vec.shape[0]
     I = torch.eye(3, device=device)
-    skew_symm = torch.transpose(torch.cross(vec.repeat((1, 3)).reshape((batch * 3, 3)),
-                                            I.repeat((batch, 1)))
-                                .reshape(batch, 3, 3),
-                                dim0=1,
-                                dim1=2)
-
-    return skew_symm
+    return torch.transpose(
+        torch.cross(
+            vec.repeat((1, 3)).reshape((batch * 3, 3)), I.repeat((batch, 1))
+        ).reshape(batch, 3, 3),
+        dim0=1,
+        dim1=2,
+    )
 
 
 def translate_along_local_z(pos, quat, offset, device):
@@ -360,9 +358,7 @@ def axis_angle_from_euler(euler):
 
     quat = torch_utils.quat_from_euler_xyz(roll=euler[:, 0], pitch=euler[:, 1], yaw=euler[:, 2])
     quat = quat * torch.sign(quat[:, 3]).unsqueeze(-1)  # smaller rotation 
-    axis_angle = axis_angle_from_quat(quat)
-
-    return axis_angle
+    return axis_angle_from_quat(quat)
 
 
 def axis_angle_from_quat(quat, eps=1.0e-6):
@@ -375,9 +371,7 @@ def axis_angle_from_quat(quat, eps=1.0e-6):
     sin_half_angle_over_angle = torch.where(torch.abs(angle) > eps,
                                             torch.sin(half_angle) / angle,
                                             1 / 2 - angle ** 2.0 / 48)
-    axis_angle = quat[:, 0:3] / sin_half_angle_over_angle.unsqueeze(-1)
-
-    return axis_angle
+    return quat[:, 0:3] / sin_half_angle_over_angle.unsqueeze(-1)
 
 
 def axis_angle_from_quat_naive(quat):
@@ -388,9 +382,7 @@ def axis_angle_from_quat_naive(quat):
     mag = torch.linalg.vector_norm(quat[:, 0:3], dim=1)  # zero when quat = [0, 0, 0, 1]
     axis = quat[:, 0:3] / mag.unsqueeze(-1)
     angle = 2.0 * torch.atan2(mag, quat[:, 3])
-    axis_angle = axis * angle.unsqueeze(-1)
-
-    return axis_angle
+    return axis * angle.unsqueeze(-1)
 
 
 def get_rand_quat(num_quats, device):
@@ -410,9 +402,17 @@ def get_rand_quat(num_quats, device):
 def get_nonrand_quat(num_quats, rot_perturbation, device):
     """Generate tensor of non-random quaternions by composing random Euler rotations."""
 
-    quat = torch_utils.quat_from_euler_xyz(
-        torch.rand((num_quats, 1), device=device).squeeze() * rot_perturbation * 2.0 - rot_perturbation,
-        torch.rand((num_quats, 1), device=device).squeeze() * rot_perturbation * 2.0 - rot_perturbation,
-        torch.rand((num_quats, 1), device=device).squeeze() * rot_perturbation * 2.0 - rot_perturbation)
-
-    return quat
+    return torch_utils.quat_from_euler_xyz(
+        torch.rand((num_quats, 1), device=device).squeeze()
+        * rot_perturbation
+        * 2.0
+        - rot_perturbation,
+        torch.rand((num_quats, 1), device=device).squeeze()
+        * rot_perturbation
+        * 2.0
+        - rot_perturbation,
+        torch.rand((num_quats, 1), device=device).squeeze()
+        * rot_perturbation
+        * 2.0
+        - rot_perturbation,
+    )

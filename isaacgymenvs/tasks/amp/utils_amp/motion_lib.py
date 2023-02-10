@@ -60,22 +60,18 @@ class MotionLib():
 
     def sample_motions(self, n):
         m = self.num_motions()
-        motion_ids = np.random.choice(m, size=n, replace=True, p=self._motion_weights)
-
-        return motion_ids
+        return np.random.choice(m, size=n, replace=True, p=self._motion_weights)
 
     def sample_time(self, motion_ids, truncate_time=None):
         n = len(motion_ids)
         phase = np.random.uniform(low=0.0, high=1.0, size=motion_ids.shape)
-        
+
         motion_len = self._motion_lengths[motion_ids]
         if (truncate_time is not None):
             assert(truncate_time >= 0.0)
             motion_len -= truncate_time
 
-        motion_time = phase * motion_len
-
-        return motion_time
+        return phase * motion_len
 
     def get_motion_length(self, motion_ids):
         return self._motion_lengths[motion_ids]
@@ -242,8 +238,7 @@ class MotionLib():
 
     def _get_num_bodies(self):
         motion = self.get_motion(0)
-        num_bodies = motion.num_joints
-        return num_bodies
+        return motion.num_joints
 
     def _compute_motion_dof_vels(self, motion):
         num_frames = motion.tensor.shape[0]
@@ -256,11 +251,9 @@ class MotionLib():
             frame_dof_vel = self._local_rotation_to_dof_vel(local_rot0, local_rot1, dt)
             frame_dof_vel = frame_dof_vel
             dof_vels.append(frame_dof_vel)
-        
-        dof_vels.append(dof_vels[-1])
-        dof_vels = np.array(dof_vels)
 
-        return dof_vels
+        dof_vels.append(dof_vels[-1])
+        return np.array(dof_vels)
     
     def _local_rotation_to_dof(self, local_rot):
         body_ids = DOF_BODY_IDS

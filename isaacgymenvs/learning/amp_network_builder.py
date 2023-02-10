@@ -46,13 +46,12 @@ class AMPBuilder(network_builder.A2CBuilder):
         def __init__(self, params, **kwargs):
             super().__init__(params, **kwargs)
 
-            if self.is_continuous:
-                if (not self.space_config['learn_sigma']):
-                    actions_num = kwargs.get('actions_num')
-                    sigma_init = self.init_factory.create(**self.space_config['sigma_init'])
-                    self.sigma = nn.Parameter(torch.zeros(actions_num, requires_grad=False, dtype=torch.float32), requires_grad=False)
-                    sigma_init(self.sigma)
-                    
+            if self.is_continuous and (not self.space_config['learn_sigma']):
+                actions_num = kwargs.get('actions_num')
+                sigma_init = self.init_factory.create(**self.space_config['sigma_init'])
+                self.sigma = nn.Parameter(torch.zeros(actions_num, requires_grad=False, dtype=torch.float32), requires_grad=False)
+                sigma_init(self.sigma)
+
             amp_input_shape = kwargs.get('amp_input_shape')
             self._build_disc(amp_input_shape)
 
@@ -75,18 +74,17 @@ class AMPBuilder(network_builder.A2CBuilder):
 
         def eval_disc(self, amp_obs):
             disc_mlp_out = self._disc_mlp(amp_obs)
-            disc_logits = self._disc_logits(disc_mlp_out)
-            return disc_logits
+            return self._disc_logits(disc_mlp_out)
 
         def get_disc_logit_weights(self):
             return torch.flatten(self._disc_logits.weight)
 
         def get_disc_weights(self):
-            weights = []
-            for m in self._disc_mlp.modules():
-                if isinstance(m, nn.Linear):
-                    weights.append(torch.flatten(m.weight))
-
+            weights = [
+                torch.flatten(m.weight)
+                for m in self._disc_mlp.modules()
+                if isinstance(m, nn.Linear)
+            ]
             weights.append(torch.flatten(self._disc_logits.weight))
             return weights
 
@@ -117,5 +115,4 @@ class AMPBuilder(network_builder.A2CBuilder):
             return
 
     def build(self, name, **kwargs):
-        net = AMPBuilder.Network(self.params, **kwargs)
-        return net
+        return AMPBuilder.Network(self.params, **kwargs)

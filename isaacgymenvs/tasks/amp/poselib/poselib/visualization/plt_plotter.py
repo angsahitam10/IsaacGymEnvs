@@ -83,16 +83,12 @@ class Matplotlib2DPlotter(BasePlotter):
     def _min(self, x, y):
         if x is None:
             return y
-        if y is None:
-            return x
-        return min(x, y)
+        return x if y is None else min(x, y)
 
     def _max(self, x, y):
         if x is None:
             return y
-        if y is None:
-            return x
-        return max(x, y)
+        return x if y is None else max(x, y)
 
     def _init_lim(self):
         self._curr_x_min = None
@@ -208,11 +204,9 @@ class Matplotlib2DPlotter(BasePlotter):
             ymean = 0
 
         plot_radius = max(
-            [
-                abs(lim - mean_)
-                for lims, mean_ in ((xlim, xmean), (ylim, ymean))
-                for lim in lims
-            ]
+            abs(lim - mean_)
+            for lims, mean_ in ((xlim, xmean), (ylim, ymean))
+            for lim in lims
         )
 
         self._ax.set_xlim([xmean - plot_radius, xmean + plot_radius])
@@ -267,16 +261,12 @@ class Matplotlib3DPlotter(BasePlotter):
     def _min(self, x, y):
         if x is None:
             return y
-        if y is None:
-            return x
-        return min(x, y)
+        return x if y is None else min(x, y)
 
     def _max(self, x, y):
         if x is None:
             return y
-        if y is None:
-            return x
-        return max(x, y)
+        return x if y is None else max(x, y)
 
     def _init_lim(self):
         self._curr_x_min = None
@@ -405,11 +395,9 @@ class Matplotlib3DPlotter(BasePlotter):
         zmean = np.mean(zlim)
 
         plot_radius = max(
-            [
-                abs(lim - mean_)
-                for lims, mean_ in ((xlim, xmean), (ylim, ymean), (zlim, zmean))
-                for lim in lims
-            ]
+            abs(lim - mean_)
+            for lims, mean_ in ((xlim, xmean), (ylim, ymean), (zlim, zmean))
+            for lim in lims
         )
 
         self._ax.set_xlim3d([xmean - plot_radius, xmean + plot_radius])

@@ -42,7 +42,7 @@ def plot_skeleton_state(skeleton_state, task_name=""):
     :type skeleton_state: SkeletonState
     :type task_name: string, optional
     """
-    logger.info("plotting {}".format(task_name))
+    logger.info(f"plotting {task_name}")
     task = Draw3DSkeletonState(task_name=task_name, skeleton_state=skeleton_state)
     plotter = Matplotlib3DPlotter(task)
     plotter.show()
@@ -57,7 +57,7 @@ def plot_skeleton_states(skeleton_state, skip_n=1, task_name=""):
     :type skeleton_state: SkeletonState
     :type task_name: string, optional
     """
-    logger.info("plotting {} motion".format(task_name))
+    logger.info(f"plotting {task_name} motion")
     assert len(skeleton_state.shape) == 1, "the state must have only one dimension"
     task = Draw3DSkeletonState(task_name=task_name, skeleton_state=skeleton_state[0])
     plotter = Matplotlib3DPlotter(task)
@@ -78,7 +78,7 @@ def plot_skeleton_motion(skeleton_motion, skip_n=1, task_name=""):
     :type skeleton_motion: SkeletonMotion
     :type task_name: string, optional
     """
-    logger.info("plotting {} motion".format(task_name))
+    logger.info(f"plotting {task_name} motion")
     task = Draw3DSkeletonMotion(
         task_name=task_name, skeleton_motion=skeleton_motion, frame_index=0
     )
